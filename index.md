@@ -402,33 +402,7 @@ For blue-team readers:
   boundary, not at the hypervisor. Nothing in the current MSFT
   security-boundary docs claims otherwise.
 
-## 9. Reference implementation
-
-The reference implementation lives in `Superfetch.ixx`. Notable
-engineering choices:
-
-- **Lazy scan.** `Init()` does only the fast range query (single
-  syscall). The full PFN enumeration is deferred until a caller
-  actually needs DTB / VA→PA lookups. Keeps startup cheap for
-  callers that only need the physical memory map.
-- **Batched PFN queries.** PFNs are queried in `0x10000` batches
-  (256 MiB of physical address space at a time). Reduces per-syscall
-  overhead vs. one-PFN-per-call; keeps the per-batch allocation
-  bounded.
-- **Self-ref detection heuristic.** Any PFN whose `Va` matches the
-  four-equal-indices pattern and lives in the kernel half of the
-  canonical VA range is assumed to be that process's PML4. This is
-  cheap (integer compares only) and is what turns the raw PFN dump
-  into a PID → DTB table — the core novel contribution.
-- **`Shutdown()` scrubs the tables.** DTB values are treated as
-  sensitive — `SecureZeroMemory` before the vectors are dropped so
-  a heap-scanning follow-up doesn't recover them.
-
-The implementation targets modern Win11 (`kSfVersion = 0x2D`). Two
-older layouts (`RangeInfoV1` vs `V2`) are handled at query time via
-the build number.
-
-## 10. Further reading
+## 9. Further reading
 
 - [**v1k1ngfr — "The SuperFetch Query superpower"**](https://v1k1ngfr.github.io/superfetchquery-superpower/)
   — Superfetch PFN queries for VA→PA translation, process enumeration,
